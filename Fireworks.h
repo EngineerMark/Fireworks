@@ -136,7 +136,7 @@ namespace FW {
 			return life_span == 0;
 		}
 
-		void Update(float fElapsedTime) {
+		void Update(double fElapsedTime) {
 			if (!is_firework) {
 				velocity *= 0.95;
 				life_span -= fElapsedTime;
@@ -152,7 +152,7 @@ namespace FW {
 
 #ifdef OLC_PGE_DEF
 		void Show(olc::PixelGameEngine& renderer, FireworkShow& show) {
-			olc::Pixel p(255, 255, 255, life_span * 255);
+			olc::Pixel p(255, 255, 255, (int)(life_span * 255));
 			renderer.Draw(position.ConvertToOlcVI(), p);
 			//renderer.FillCircle(position.ConvertToOlcVI(), 2, p);
 		}
@@ -205,7 +205,7 @@ namespace FW {
 			return false;
 		}
 
-		void Update(float fElapsedTime) {
+		void Update(double fElapsedTime) {
 			if (!exploded) {
 				firework_particle->ApplyForce(G_GRAVITY);
 				firework_particle->Update(fElapsedTime);
@@ -267,7 +267,7 @@ namespace FW {
 					p->Update(_fElapsedTime);
 				}*/
 				if (fireworks.size() > 0) {
-					for (unsigned i = fireworks.size() - 1; i > 0; i--)
+					for (size_t i = fireworks.size() - 1; i > 0; i--)
 					{
 						Firework& f = *fireworks[i - 1];
 						f.Update(_fElapsedTime);
