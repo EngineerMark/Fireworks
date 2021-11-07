@@ -1,9 +1,17 @@
 #pragma once
 
+//All the drawing and stuff is done using olc PixelGameEngine,
+//but this is not required.
+//However don't forget to create your own Show()/Render()/something functions to render them if you opt out of this
 #include "olcPixelGameEngine.h"
 
 #define _USE_MATH_DEFINES
 #include <math.h>
+
+#ifndef OLC_PGE_DEF
+#define TRUE 1
+#define FALSE 0
+#endif
 
 namespace FW {
 
@@ -94,6 +102,7 @@ namespace FW {
 
 	static vector G_GRAVITY = { 0, 0.2 };
 
+	class FireworkShow;
 	class Firework;
 
 	class Particle {
@@ -103,15 +112,14 @@ namespace FW {
 		vector acceleration;
 		double life_span = 1;
 
-		Firework* firework = NULL;
+		bool is_firework = false;
 
-		Particle(vector position, Firework* firework) {
+		Particle(vector position, bool is_firework) {
 			this->position = position;
+			this->is_firework = is_firework;
 
-			if (firework != NULL) {
+			if (is_firework) {
 				velocity.y = 0 - (rand() % 50 + 100);
-
-				this->firework = firework;
 			}
 			else {
 				velocity = vector::randAngle();
@@ -129,7 +137,7 @@ namespace FW {
 		}
 
 		void Update(float fElapsedTime) {
-			if (firework == NULL) {
+			if (!is_firework) {
 				velocity *= 0.95;
 				life_span -= fElapsedTime;
 
@@ -143,7 +151,7 @@ namespace FW {
 		}
 
 #ifdef OLC_PGE_DEF
-		void Show(olc::PixelGameEngine& renderer) {
+		void Show(olc::PixelGameEngine& renderer, FireworkShow& show) {
 			olc::Pixel p(255, 255, 255, life_span * 255);
 			renderer.Draw(position.ConvertToOlcVI(), p);
 			//renderer.FillCircle(position.ConvertToOlcVI(), 2, p);
@@ -163,7 +171,7 @@ namespace FW {
 		}
 
 		Firework(vector position) {
-			firework_particle = new Particle(position, this);
+			firework_particle = new Particle(position, TRUE);
 		}
 
 		void Cleanup() {
@@ -180,7 +188,7 @@ namespace FW {
 		void Explode() {
 			for (size_t i = 0; i < 100; i++)
 			{
-				Particle* p = new Particle(firework_particle->position, NULL);
+				Particle* p = new Particle(firework_particle->position, FALSE);
 				particles.push_back(p);
 			}
 		}
@@ -216,13 +224,13 @@ namespace FW {
 		}
 
 #ifdef OLC_PGE_DEF
-		void Show(olc::PixelGameEngine& renderer) {
+		void Show(olc::PixelGameEngine& renderer, FireworkShow& show) {
 			if (!exploded)
-				firework_particle->Show(renderer);
+				firework_particle->Show(renderer, show);
 
 			if (particles.size() > 0)
 				for (auto& p : particles)
-					p->Show(renderer);
+					p->Show(renderer, show);
 		}
 #endif
 	};
@@ -230,13 +238,19 @@ namespace FW {
 	class FireworkShow {
 	public:
 		std::vector<Firework*> fireworks;
+#ifdef OLC_PGE_DEF
 		olc::PixelGameEngine& renderer;
+#endif
+
 
 		const double UPDATE_RATE = 1 / 120;
 		double _fElapsedTime = 0;
 
-		FireworkShow(olc::PixelGameEngine& renderer) : renderer(renderer) {
-		}
+#ifdef OLC_PGE_DEF
+		FireworkShow(olc::PixelGameEngine& renderer) : renderer(renderer) { }
+#else
+		FireworkShow() { }
+#endif
 
 		void Cleanup() {
 			for (auto& p : fireworks) {
@@ -269,17 +283,21 @@ namespace FW {
 
 				//std::cout << "Firework buffer size: " + std::to_string(fireworks.size()) << std::endl;
 
-				//if (rand() % 100 <= 10)
+#ifdef OLC_PGE_DEF
+				if (rand() % 100 <= 10)
 					fireworks.push_back(new Firework({ (double)(rand() % renderer.ScreenWidth()), (double)renderer.ScreenHeight() - 2 }));
+#endif
 
 				_fElapsedTime = 0;
 			}
 		}
 
+#ifdef OLC_PGE_DEF
 		void Show() {
 			for (auto& p : fireworks) {
-				p->Show(renderer);
+				p->Show(renderer, *this);
 			}
 		}
+#endif
 	};
 };
